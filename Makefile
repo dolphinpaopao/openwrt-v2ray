@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=v2ray-core
 PKG_VERSION:=4.22.1
-PKG_RELEASE:=1
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/v2ray/v2ray-core/tar.gz/v$(PKG_VERSION)?
@@ -56,6 +56,10 @@ PKG_USE_MIPS16:=0
 
 GO_PKG:=v2ray.com/core
 GO_PKG_LDFLAGS:=-s -w
+GO_PKG_LDFLAGS_X:= \
+	v2ray.com/core.version=$(PKG_VERSION) \
+	v2ray.com/core.build=R$(PKG_RELEASE) \
+	v2ray.com/core.codename=OpenWrt
 
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
@@ -66,7 +70,7 @@ define Package/v2ray-core
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=Project V
-  DEPENDS:=$(GO_ARCH_DEPENDS) +ca-bundle
+  DEPENDS:=$(GO_ARCH_DEPENDS) +ca-certificates
 endef
 
 define Package/v2ray-core/config
@@ -235,7 +239,7 @@ define Download/geosite.dat
 endef
 
 define Build/Prepare
-	$(Build/Prepare/Default)
+	$(call Build/Prepare/Default)
 
 ifneq ($(CONFIG_V2RAY_EXCLUDE_ASSETS),y)
 	# move file to make sure download new file every build
@@ -243,12 +247,6 @@ ifneq ($(CONFIG_V2RAY_EXCLUDE_ASSETS),y)
 	mv -f $(DL_DIR)/$(GEOSITE_FILE) $(PKG_BUILD_DIR)/release/config/geosite.dat
 endif
 
-	( \
-		sed -i \
-			's/\(version[[:space:]]*=[[:space:]]*"\).*\("\)/\1$(PKG_VERSION)\2/; \
-			s/\(build[[:space:]]*=[[:space:]]*"\).*\("\)/\1OpenWrt R$(PKG_RELEASE)\2/' \
-			$(PKG_BUILD_DIR)/core.go ; \
-	)
 ifneq ($(V2RAY_SED_ARGS),)
 	( \
 		sed -i \
